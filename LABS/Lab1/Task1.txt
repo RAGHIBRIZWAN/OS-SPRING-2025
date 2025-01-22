@@ -15,4 +15,4 @@ yum remove <package-name>: Removes a package.
 gzip compresses files to save space.
 tar bundles multiple files into one archive file
 
-5) The rar command is another tool for creating and extracting .rar files, a popular compressed file format. It offers features like error recovery and splitting large archives into smaller parts. 
+5) The rar command is another tool for creating and extracting .rar files. It offers features like error recovery and splitting large archives into smaller parts.
