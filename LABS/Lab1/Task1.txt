@@ -1,0 +1,18 @@
+1) The apt-get command is a tool used to manage software on Debian-based Linux systems like Ubuntu. It helps install, update, and remove software. Key commands include:
+apt-get update: Updates the list of available packages.
+apt-get upgrade: Updates all installed packages.
+apt-get install: Installs new software.
+apt-get remove: Removes installed software.
+
+2) The yum command (Yellowdog Updater Modified) is for managing software on RPM-based Linux systems like CentOS and Red Hat. It helps with installing, updating, and handling software dependencies. Common commands are:
+yum install <package-name>: Installs a package.
+yum update: Updates all installed packages.
+yum remove <package-name>: Removes a package.
+
+3) The wget command is a simple tool for downloading files from the internet. It works with HTTP, HTTPS, and FTP. You can use it to download a single file. For example, wget <URL> downloads a file from the given link, wget -O <output_file> <URL> Save file with a different name, and wget -b <URL> Download a file in the background.
+
+4) the gzip and tar tools are commonly used together for compressing and archiving files. 
+gzip compresses files to save space.
+tar bundles multiple files into one archive file
+
+5) The rar command is another tool for creating and extracting .rar files, a popular compressed file format. It offers features like error recovery and splitting large archives into smaller parts. 
