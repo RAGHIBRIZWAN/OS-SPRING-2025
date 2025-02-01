@@ -1,0 +1,25 @@
+CXX = g++
+CXXFLAGS = -Wall -std=c++11
+
+# Object files
+OBJ = Student.o Teacher.o Course.o main.o
+
+all: program
+
+program: $(OBJ)
+	$(CXX) $(CXXFLAGS) -o program $(OBJ)
+
+Student.o: Student.cpp Student.h
+	$(CXX) $(CXXFLAGS) -c Student.cpp
+
+Teacher.o: Teacher.cpp Teacher.h
+	$(CXX) $(CXXFLAGS) -c Teacher.cpp
+
+Course.o: Course.cpp Course.h
+	$(CXX) $(CXXFLAGS) -c Course.cpp
+
+main.o: main.cpp Student.h Teacher.h Course.h
+	$(CXX) $(CXXFLAGS) -c main.cpp
+
+clean:
+	rm -f *.o program
