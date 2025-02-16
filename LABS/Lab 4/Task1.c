@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<sys/wait.h>
+#include<sys/types.h>
 
 int main(){
   pid_t child1, child2;
