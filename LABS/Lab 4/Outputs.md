@@ -2,3 +2,7 @@
 ![image](https://github.com/user-attachments/assets/ba7db0c7-fbc8-4866-8b97-8c434a55502a)
 
 ## TASK 2
+![image](https://github.com/user-attachments/assets/4217d438-b44c-4308-adc9-2c3776be9abe)
+![image](https://github.com/user-attachments/assets/73f73c33-676c-47ac-b5c7-d9f0b7d82d12)
+
+## TASK 3
