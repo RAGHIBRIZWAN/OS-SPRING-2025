@@ -8,7 +8,7 @@ len=${#sen}
 
 for ((i = 0; i < $len; i++))
 do
-    ch=${sen:$i:1} # Extract each character
+    ch=${sen:$i:1}
 
     if [[ $ch == "a" || $ch == "e" || $ch == "i" || $ch == "o" || $ch == "u" || $ch == "A" || $ch == "E" || $ch == "I" || $ch == "O" || $ch == "U" ]];
     then
