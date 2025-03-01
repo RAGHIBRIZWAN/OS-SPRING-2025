@@ -15,4 +15,4 @@ fi
 
 ## OUTPUT:
 
-![image](https://github.com/user-attachments/assets/386b9651-9b8a-443c-b436-32d172206faf)
+![image](https://github.com/user-attachments/assets/3edb2d41-7d47-4607-9a22-1a2ddc81822a)
