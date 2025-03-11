@@ -12,5 +12,5 @@ plier(){
 plier $@
 ```
 
-# OUTPUT:
+# QUESTION:
 ![image](https://github.com/user-attachments/assets/0d1bc098-1420-443c-b26d-b9d3cbfeffe3)
