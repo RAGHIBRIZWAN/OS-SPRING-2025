@@ -38,5 +38,45 @@ done
 echo "Numbers in ascending order: ${numbers[*]}"
 ```
 
+# METHOD:2
+
+```c
+pos=0
+neg=0
+zero=0
+read -p "Enter numbers : " -a numbers
+
+len=${#numbers[@]}
+
+for ((i = 0; i < len; i++))
+do
+    if [[ ${numbers[i]} -gt 0 ]]; then
+        ((pos++))
+    elif [[ ${numbers[i]} -lt 0 ]]; then
+        ((neg++))
+    else
+        ((zero++))
+    fi
+done
+
+echo "Positive numbers: $pos"
+echo "Negative numbers: $neg"
+echo "Zeroes: $zero"
+
+for ((i = 0; i < 9; i++))
+do
+    for ((j = 0; j < 9 - i; j++))
+    do
+        if [[ ${numbers[j]} -gt ${numbers[j+1]} ]]; then
+            temp=${numbers[j]}
+            numbers[j]=${numbers[j+1]}
+            numbers[j+1]=$temp
+        fi
+    done
+done
+
+echo "Numbers in ascending order: ${numbers[*]}"
+```
+
 # OUTPUT:
 ![image](https://github.com/user-attachments/assets/e990089d-0523-4599-9339-7bcb4b737a10)
