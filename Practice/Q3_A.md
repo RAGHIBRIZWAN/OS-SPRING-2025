@@ -78,5 +78,5 @@ done
 echo "Numbers in ascending order: ${numbers[*]}"
 ```
 
-# OUTPUT:
+# QUESTION:
 ![image](https://github.com/user-attachments/assets/e990089d-0523-4599-9339-7bcb4b737a10)
