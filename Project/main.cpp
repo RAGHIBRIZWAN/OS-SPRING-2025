@@ -1,535 +1,327 @@
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <cstdlib>
-#include <map>
-#include <queue>
-using namespace std;
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <string.h>
+#include <unistd.h>
 
-class BookData
-{
-    string title;
-    string author;
-    string genre;
-    bool isAvailable;
-    int bookNumber;
+#define SIZE 50
 
-public:
-    BookData() {}
-    BookData(string title, string author, string genre, int bookNumber, bool avail)
-        : title(title), author(author), genre(genre), bookNumber(bookNumber), isAvailable(avail) {}
+typedef struct {
+    char name[30];
+    char author[30];
+    int id;
+} bookData;
 
-    string getTitle() const { return title; }
-    string getAuthor() const { return author; }
-    string getGenre() const { return genre; }
-    bool getAvailability() const { return isAvailable; }
-    int getBookNumber() const { return bookNumber; }
-    void setAvailability(bool avail) { isAvailable = avail; }
+typedef struct {
+    char uname[30];
+    char name[30];
+    char author[30];
+    int id;
+} issueData;
 
-    friend class Hashing;
-    friend class Heap;
-    friend class node;
-    friend class BST;
-    friend class Library;
-    friend class User;
-};
+bookData booksArray[SIZE] = { {"", "", 0} };
+issueData issueArray[SIZE] = { {"", "", "", 0} };
+int count = 0;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; // Chatgpt
 
-// Binary Search Tree Stores Data Of All Available Books
-class node
-{
-    BookData *books;
-    node *left;
-    node *right;
-
-public:
-    node(BookData *d) : books(d), left(nullptr), right(nullptr) {}
-
-    friend class BST;
-    friend class User;
-};
-
-class BST
-{
-    node *head;
-
-    node *insert(node *root, BookData *books)
-    {
-        if (root == nullptr)
-        {
-            return new node(books);
-        }
-        if (root->books->getBookNumber() == books->getBookNumber())
-            return root;
-
-        if (root->books->getBookNumber() > books->getBookNumber())
-        {
-            root->left = insert(root->left, books);
-        }
-        else
-        {
-            root->right = insert(root->right, books);
-        }
-        return root;
+void* authentication(void* arg) {
+    int *code = (int *)arg;
+    int *result = (int *)malloc(sizeof(int));
+    if (*code == 786) {
+        *result = 1;
     }
+    return (void *)result;
+}
 
-    void inOrderTraversal(node *root)
-    {
-        if (root == nullptr)
-            return;
-        inOrderTraversal(root->left);
-        cout << "Title: " << root->books->getTitle()
-             << ", Author: " << root->books->getAuthor()
-             << ", Genre: " << root->books->getGenre()
-             << ", Book Number: " << root->books->getBookNumber()
-             << ", Availability: " << (root->books->getAvailability() ? "Available" : "Issued") << endl;
-        inOrderTraversal(root->right);
-    }
+void* addBook(void* arg) {
+    bookData *data = (bookData *)arg;
 
-public:
-    BST() : head(nullptr) {}
+    getchar();
+    printf("Enter the name of the book: ");
+    fgets(data->name, sizeof(data->name), stdin);
+    data->name[strcspn(data->name, "\n")] = '\0';  // Remove newline
 
-    void display()
-    {
-        cout << "Books in BST (In-Order Traversal):" << endl;
-        inOrderTraversal(head);
-    }
+    printf("Enter the name of the author of the book: ");
+    fgets(data->author, sizeof(data->author), stdin);
+    data->author[strcspn(data->author, "\n")] = '\0';
 
-    void insertion(BookData *books)
-    {
-        head = insert(head, books);
-    }
+    printf("Enter the ID of the book: ");
+    scanf("%d", &data->id);
+    getchar();
 
-    node *search(node *root, const string &val)
-    {
-        if (root == nullptr)
-        {
-            return nullptr;
-        }
-        if (root->books->getTitle() == val)
-        {
-            return root;
-        }
-        if (root->books->getTitle() > val)
-        {
-            return search(root->left, val);
-        }
-        else
-        {
-            return search(root->right, val);
+    pthread_mutex_lock(&lock);
+    for (int i = 0; i < SIZE; i++) {
+        if (booksArray[i].id == 0) break;
+        if (strcmp(booksArray[i].name, data->name) == 0 &&
+            strcmp(booksArray[i].author, data->author) == 0) {
+            printf("Book already exists!\n");
+            pthread_mutex_unlock(&lock);
+            return NULL;
         }
     }
 
-    void updateAvailability(node *root, const string &title, bool availability)
-    {
-        if (root == nullptr)
-            return;
-
-        if (root->books->getTitle() == title)
-        {
-            root->books->setAvailability(availability);
-            return;
-        }
-        if (root->books->getTitle() > title)
-        {
-            updateAvailability(root->left, title, availability);
-        }
-        else
-        {
-            updateAvailability(root->right, title, availability);
+    for (int i = 0; i < SIZE; i++) {
+        if (booksArray[i].id == 0) {
+            booksArray[i] = *data;
+            printf("Book added!\n");
+            break;
         }
     }
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
 
-    node *searching(string val)
-    {
-        return search(head, val);
-    }
+void* deleteBook(void* arg) {
+    char name[30], author[30];
+    getchar();
+    printf("Enter the name of the book to delete: ");
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
 
-    node *Head()
-    {
-        return head;
-    }
+    printf("Enter the author of the book to delete: ");
+    fgets(author, sizeof(author), stdin);
+    author[strcspn(author, "\n")] = '\0';
 
-    friend class Library;
-    friend class User;
-};
-
-// Data Stored Of All Books
-class Heap
-{
-    vector<BookData> arr;
-
-public:
-    Heap()
-    {
-        arr.push_back(BookData("", "", "", 0, false));
-    }
-
-    void maxHeapInsertion(BookData book)
-    {
-        arr.push_back(book);
-        int index = arr.size() - 1;
-
-        while (index > 1)
-        {
-            int parent = index / 2;
-            if (arr[index].getBookNumber() > arr[parent].getBookNumber())
-            {
-                swap(arr[index], arr[parent]);
-                index = parent;
-            }
-            else
-            {
-                break;
-            }
+    pthread_mutex_lock(&lock);
+    for (int i = 0; i < SIZE; i++) {
+        if (booksArray[i].id == 0) break;
+        if (strcmp(booksArray[i].name, name) == 0 &&
+            strcmp(booksArray[i].author, author) == 0) {
+            strcpy(booksArray[i].name, "");
+            strcpy(booksArray[i].author, "");
+            booksArray[i].id = 0;
+            printf("Book deleted!\n");
+            pthread_mutex_unlock(&lock);
+            return NULL;
         }
     }
+    printf("Book not found.\n");
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
 
-    void display()
-    {
-        cout << "Books in Heap (Level Order):" << endl;
-        for (int i = 1; i < arr.size(); i++)
-        {
-            cout << "Title: " << arr[i].getTitle()
-                 << ", Author: " << arr[i].getAuthor()
-                 << ", Genre: " << arr[i].getGenre()
-                 << ", Book Number: " << arr[i].getBookNumber()
-                 << ", Availability: " << (arr[i].getAvailability() ? "Available" : "Issued") << endl;
+void* updateBook(void* arg) {
+    bookData *data = (bookData *)arg;
+    getchar();
+    printf("Enter the name of the book to update: ");
+    fgets(data->name, sizeof(data->name), stdin);
+    data->name[strcspn(data->name, "\n")] = '\0';
+
+    printf("Enter the author of the book to update: ");
+    fgets(data->author, sizeof(data->author), stdin);
+    data->author[strcspn(data->author, "\n")] = '\0';
+
+    pthread_mutex_lock(&lock);
+    for (int i = 0; i < SIZE; i++) {
+        if (booksArray[i].id == 0) break;
+        if (strcmp(booksArray[i].name, data->name) == 0 && strcmp(booksArray[i].author, data->author) == 0) {
+
+            printf("Enter new name: ");
+            fgets(data->name, sizeof(data->name), stdin);
+            data->name[strcspn(data->name, "\n")] = '\0';
+
+            printf("Enter new author: ");
+            fgets(data->author, sizeof(data->author), stdin);
+            data->author[strcspn(data->author, "\n")] = '\0';
+
+            printf("Enter new ID: ");
+            scanf("%d", &data->id);
+            getchar();
+
+            booksArray[i] = *data;
+            printf("Book updated!\n");
+            pthread_mutex_unlock(&lock);
+            return NULL;
         }
     }
+    printf("Book not found.\n");
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
 
-    friend class Library;
-    friend class User;
-};
+void* searchBook(void* arg) {
+    char name[30], author[30];
+    getchar();
+    printf("Enter the name of the book: ");
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
 
-class WaitingList
-{
-    struct WaitEntry
-    {
-        string userName;
-        string bookTitle;
-    };
+    printf("Enter the author of the book: ");
+    fgets(author, sizeof(author), stdin);
+    author[strcspn(author, "\n")] = '\0';
 
-    queue<WaitEntry> waitQueue;
-
-public:
-    void addToQueue(const string &userName, const string &bookTitle)
-    {
-        waitQueue.push({userName, bookTitle});
-        cout << userName << " has been added to the waiting list for " << bookTitle << "." << endl;
-    }
-
-    void notifyNext()
-    {
-        if (!waitQueue.empty())
-        {
-            WaitEntry nextUser = waitQueue.front();
-            cout << "Notifying " << nextUser.userName << " that the book " << nextUser.bookTitle << " is now available!" << endl;
-            waitQueue.pop();
-        }
-        else
-        {
-            cout << "No users are waiting for this book." << endl;
+    pthread_mutex_lock(&lock);
+    for (int i = 0; i < SIZE; i++) {
+        if (booksArray[i].id == 0) break;
+        if (strcmp(booksArray[i].name, name) == 0 &&
+            strcmp(booksArray[i].author, author) == 0) {
+            printf("Book found!\nName: %s\nAuthor: %s\nID: %d\n",
+                   booksArray[i].name, booksArray[i].author, booksArray[i].id);
+            pthread_mutex_unlock(&lock);
+            return NULL;
         }
     }
+    printf("Book not found.\n");
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
 
-    bool isEmpty() const
-    {
-        return waitQueue.empty();
-    }
+void* issueBook(void* arg) {
+    issueData *data = (issueData *)arg;
+    getchar();
+    
+    printf("Enter the name of the user: ");
+    fgets(data->uname, sizeof(data->uname), stdin);
+    data->uname[strcspn(data->uname, "\n")] = '\0';
+    
+    printf("Enter the name of the book: ");
+    fgets(data->name, sizeof(data->name), stdin);
+    data->name[strcspn(data->name, "\n")] = '\0';
 
-    void displayQueue() const
-    {
-        if (waitQueue.empty())
-        {
-            cout << "No users are currently in the waiting list." << endl;
-            return;
-        }
+    printf("Enter the author of the book: ");
+    fgets(data->author, sizeof(data->author), stdin);
+    data->author[strcspn(data->author, "\n")] = '\0';
 
-        cout << "Users in the waiting list:" << endl;
-        queue<WaitEntry> tempQueue = waitQueue; // Create a copy to display
-        while (!tempQueue.empty())
-        {
-            WaitEntry entry = tempQueue.front();
-            cout << ":User  " << entry.userName << ", Waiting for: " << entry.bookTitle << endl;
-            tempQueue.pop();
-        }
-    }
-};
-
-class Library
-{
-    Heap heap;
-
-public:
-    BST bst;
-    Library() {}
-
-    void addBooksToHeap(string title, string author, string genre, int id, bool avail)
-    {
-        BookData books(title, author, genre, id, avail);
-        heap.maxHeapInsertion(books);
-        cout << "Book successfully added to heap!" << endl;
-    }
-
-    void addBooksToBST(string title, string author, string genre, int id, bool avail)
-    {
-        BookData *books = new BookData(title, author, genre, id, avail);
-        if (books->getAvailability())
-        {
-            bst.insertion(books);
-            cout << "Book successfully added to BST!" << endl;
-        }
-        else
-        {
-            cout << "Sorry, the book is not available, so it can't be added to BST!" << endl;
+    pthread_mutex_lock(&lock);
+    for (int i = 0; i < SIZE; i++) {
+        if (booksArray[i].id == 0) break;
+        if (strcmp(booksArray[i].name, data->name) == 0 &&
+            strcmp(booksArray[i].author, data->author) == 0) {
+            issueArray[count] = *data;
+            count++;
+            printf("Book Issued Successfully!\n");
+            pthread_mutex_unlock(&lock);
+            return NULL;
         }
     }
+    printf("Book not found.\n");
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
 
-    void displayHeap()
-    {
-        heap.display();
-    }
+void* returnBook(void* arg) {
+    char name[30],author[30],uname[30];
+    getchar();
+    printf("Enter the name of the user: ");
+    fgets(uname, sizeof(uname), stdin);
+    uname[strcspn(uname, "\n")] = '\0';
+    
+    printf("Enter the name of the book: ");
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
 
-    void displayBST()
-    {
-        bst.display();
-    }
+    printf("Enter the author of the book: ");
+    fgets(author, sizeof(author), stdin);
+    author[strcspn(author, "\n")] = '\0';
 
-    friend class User;
-};
+    pthread_mutex_lock(&lock);
+    for (int i = 0; i <= count; i++) {
+        if (booksArray[i].id == 0) break;
+        if (strcmp(issueArray[i].name, name) == 0 && strcmp(issueArray[i].author, author) == 0 && strcmp(issueArray[i].uname, uname) == 0){
+            strcpy(issueArray[i].uname, "");
+            strcpy(issueArray[i].name, "");
+            strcpy(issueArray[i].author, "");
+            issueArray[i].id = 0;
 
-class User
-{
-    vector<pair<string, vector<BookData *>>> us;
-    WaitingList waitingList;
-
-public:
-    void issueBook(string title, string user, BST &bst, WaitingList &waitingList)
-    {
-        node *a = bst.searching(title);
-
-        if (a == nullptr)
-        {
-            cout << "Sorry, the book is not found!" << endl;
-            return;
-        }
-
-        if (!a->books->getAvailability())
-        {
-            // If the book is unavailable, add the user to the waiting list
-            waitingList.addToQueue(user, title);
-            return;
-        }
-
-        // Existing logic for issuing the book
-        bool userFound = false;
-
-        for (int i = 0; i < us.size(); i++)
-        {
-            if (us[i].first == user)
-            {
-                us[i].second.push_back(a->books);
-                userFound = true;
-                break;
-            }
-        }
-
-        if (!userFound)
-        {
-            us.push_back({user, {a->books}});
-        }
-
-        bst.updateAvailability(bst.Head(), title, false);
-        cout << "Book successfully issued!" << endl;
-    }
-
-    void returnBook(string user, int bookNumber, BST &bst, WaitingList &waitingList)
-    {
-        for (int i = 0; i < us.size(); i++)
-        {
-            if (us[i].first == user)
-            {
-                auto &books = us[i].second;
-                for (int j = 0; j < books.size(); j++)
-                {
-                    if (books[j]->getBookNumber() == bookNumber)
-                    {
-                        bst.updateAvailability(bst.Head(), books[j]->getTitle(), true);
-                        books.erase(books.begin() + j);
-                        cout << "Book successfully returned!" << endl;
-
-                        // Notify the next user in the waiting list
-                        waitingList.notifyNext();
-                        return;
-                    }
-                }
-                cout << "Book with the given number is not issued by this user." << endl;
-                return;
-            }
-        }
-        cout << "User  not found!" << endl;
-    }
-
-    void showAllBooksTaken()
-    {
-        if (us.empty())
-        {
-            cout << "No books have been issued yet." << endl;
-            return;
-        }
-
-        cout << "Books issued by users:\n";
-
-        for (int i = 0; i < us.size(); i++)
-        {
-            string userName = us[i].first;
-            vector<BookData *> books = us[i].second;
-
-            cout << ":User  " << userName << endl;
-
-            if (books.empty())
-            {
-                cout << "  No books issued.\n";
-                continue;
-            }
-
-            for (int j = 0; j < books.size(); j++)
-            {
-                cout << "  - Title: " << books[j]->getTitle()
-                     << ", Author: " << books[j]->getAuthor()
-                     << ", Book Number: " << books[j]->getBookNumber()
-                     << ", Availability: "
-                     << (books[j]->getAvailability() ? "Available" : "Issued") << endl;
-            }
+            printf("Book Returned Successfully!\n");
+            pthread_mutex_unlock(&lock);
+            return NULL;
         }
     }
-};
+    printf("Book not found.\n");
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
 
-int main()
-{
-    int a = 0, b = 0;
-    int code = 786;
-    int cinCode, bId, id;
-    string title, author, genre, bTitle, name;
-    bool avail;
-    Library lib;
-    WaitingList waitingList;
-    User use;
+void* manager(void* arg){
+  for (int i = 0; i <= count; i++){
+    if(issueArray[i].id == 0){
+      continue;
+    }
+    printf("User Name: %s\nBook Name: %s\nAuthor: %s\nID: %d\n", issueArray[i].uname, issueArray[i].name, issueArray[i].author, issueArray[i].id);
+  }
+  return NULL;
+}
 
-    while (true)
-    {
-        cout << "Choose Any One:" << endl;
-        cout << "1.Librarian" << endl;
-        cout << "2.User" << endl;
-        cout << "3.Exit" << endl;
-        cin >> a;
+int main() {
+    pthread_t threads[10];
+    int code;
+    int choice;
+    int check = true;
 
-        switch (a)
-        {
+    printf("Enter any one:\n 1) Library\n 2) User\n 3) Exit\n");
+    scanf("%d", &choice);
+
+    bookData data;
+    issueData issue;
+    
+    void* authResult;
+    
+    while(check){
+      printf("Enter any one:\n 1) Library\n 2) User\n 3) Exit\n");
+      scanf("%d", &choice);
+      switch(choice){
         case 1:
-            cout << "Enter the code to access: ";
-            cin >> cinCode;
-            if (cinCode == code)
-            {
-                cout << "Access Granted!" << endl;
-                while (true)
-                {
-                    cout << "Librarian Menu:" << endl;
-                    cout << "1. Add Book To Shelf" << endl;
-                    cout << "2. Display Heap" << endl;
-                    cout << "3. Display BST" << endl;
-                    cout << "4. Display Waiting List" << endl;
-                    cout << "5. Exit Librarian Menu" << endl;
-                    int librarianChoice;
-                    cin >> librarianChoice;
+          printf("Enter the code to access library: ");
+          scanf("%d", &code);
+          pthread_create(&threads[0], NULL, authentication, &code);
+          pthread_join(threads[0], &authResult);
 
-                    if (librarianChoice == 1)
-                    {
-                        cout << "Add Book To shelf" << endl;
-                        cout << "Enter the title of the book: ";
-                        cin.ignore();
-                        getline(cin, title);
-                        cout << "Enter the author of the book: ";
-                        getline(cin, author);
-                        cout << "Enter the genre of the book: ";
-                        getline(cin, genre);
-                        cout << "Enter the Id of the book: ";
-                        cin >> id;
-                        cout << "Enter the availability of the book (1 for available, 0 for not available): ";
-                        cin >> avail;
-                        lib.addBooksToHeap(title, author, genre, id, avail);
-                        lib.addBooksToBST(title, author, genre, id, avail);
-                    }
-                    else if (librarianChoice == 2)
-                    {
-                        lib.displayHeap();
-                    }
-                    else if (librarianChoice == 3)
-                    {
-                        lib.displayBST();
-                    }
-                    else if (librarianChoice == 4)
-                    {
-                        waitingList.displayQueue();
-                    }
-                    else if (librarianChoice == 5)
-                    {
-                        break; // Exit the librarian menu
-                    }
-                    else
-                    {
-                        cout << "Invalid option!" << endl;
-                    }
-                }
+          if (*(int*)authResult == 1) {
+            int choice2;
+            printf("Enter any one:\n 1) Add Book\n 2) Delete Book\n 3) Update Book\n 4) Search Book\n 5) Track Users\n");
+            scanf("%d",&choice2);
+            switch(choice2){
+                case 1:
+                    pthread_create(&threads[1], NULL, addBook, &data);
+                    pthread_join(threads[1], NULL);
+                    break;
+                case 2:
+                    pthread_create(&threads[2], NULL, deleteBook, NULL);
+                    pthread_join(threads[2], NULL);
+                    break;
+                case 3:
+                    pthread_create(&threads[3], NULL, updateBook, &data);
+                    pthread_join(threads[3], NULL);
+                    break;
+                case 4:
+                    pthread_create(&threads[4], NULL, searchBook, NULL);
+                    pthread_join(threads[4], NULL);
+                    break;
+                case 5:
+                    pthread_create(&threads[5], NULL, manager, NULL);
+                    pthread_join(threads[5], NULL);
+                    break;
+                default:
+                    printf("Wrong Input!\n");
+                    break;
             }
-            else
-            {
-                cout << "Sorry, wrong code!" << endl;
-            }
-            break;
-
-        case 2:
-            cout << "Choose Any One:" << endl;
-            cout << "1.Issue Book" << endl;
-            cout << "2.Return Book" << endl;
-            cout << "3.Show All Books Taken" << endl;
-            cin >> b;
-            switch (b)
-            {
-            case 1:
-                cout << "Title of Book: ";
-                cin.ignore();
-                getline(cin, bTitle);
-                cout << "Your name: ";
-                getline(cin, name);
-                use.issueBook(bTitle, name, lib.bst, waitingList);
-                break;
-
-            case 2:
-                cout << "Book id: ";
-                cin >> bId;
-                cout << "Your name: ";
-                cin.ignore();
-                getline(cin, name);
-                use.returnBook(name, bId, lib.bst, waitingList);
-                break;
-
-            case 3:
-                use.showAllBooksTaken();
-                break;
-
-            default:
-                cout << "Invalid option!" << endl;
-                break;
-            }
-            break;
-
-        case 3:
-            return 0;
-
-        default:
-            cout << "Invalid option!" << endl;
-            break;
+        } else {
+            printf("Wrong Password!\n");
         }
+        break;
+      case 2:
+        int choice3;
+        printf("Enter any one:\n 1) Issue Book\n 2) Return Book\n");
+        scanf("%d",&choice3);
+        switch(choice3){
+          case 1:
+            pthread_create(&threads[6], NULL, issueBook, (void *)&issue);
+            pthread_join(threads[6], NULL);
+            break;
+          case 2:
+            pthread_create(&threads[7], NULL, returnBook, NULL);
+            pthread_join(threads[7], NULL);
+            break;
+          }
+          break;
+      case 3:
+        check = false;
+        break;
+      default:
+        printf("Wrong Input!");
+        break;
     }
+  }
+    return 0;
 }
